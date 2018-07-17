@@ -2,7 +2,9 @@ var steem = require('steem')
 steem.api.setOptions({ url: 'https://api.steemit.com' });
 var mysql = require('mysql')
 var express = require('express')
+var cors = require('cors')
 var app = express()
+app.use(cors())
 var getJSON = require('get-json')
 
 var bodyParser = require('body-parser');
@@ -109,7 +111,7 @@ app.post('/rtmpRewrite', function (req, res) {
     
 })
  
-app.listen(3000)
+app.listen(process.env.PORT)
 
 function createKey(length) {
     var text = "";
