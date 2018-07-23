@@ -89,26 +89,25 @@ app.get('/verify/:block/:tx_num', function (req, res) {
 })
 
 app.post('/rtmpRewrite', function (req, res) {
+    console.log(req.body)
     var params = req.body.split('\n')
+    console.log(params)
 
     // only allow this call from mistserver in local
-    if (req.ip != '::1' && req.ip != '127.0.0.1') {
-        res.send('Nope')
-        return
-    } else {
-        var streamKey = params[0].split('/')[params[0].split('/').length-1]
-        sql.query('SELECT username FROM streamKeys WHERE verified=1 AND streamKey = "'+streamKey+'"', function(err, qRes, fields) {
-            if (err) throw err;
-            if (qRes.length < 1) {
-                res.send('Nope')
-            } else {
-                console.log(qRes[0].username+' started streaming.')
-                res.send('rtmp://'+params[0].split('/')[2]+'/live/normal+'+qRes[0].username)
-            }
-        })
-        
-    }
-    
+    // if (req.ip != '::1' && req.ip != '127.0.0.1') {
+    //     res.send('Nope')
+    //     return
+    // }
+    var streamKey = params[0].split('/')[params[0].split('/').length-1]
+    sql.query('SELECT username FROM streamKeys WHERE verified=1 AND streamKey = "'+streamKey+'"', function(err, qRes, fields) {
+        if (err) throw err;
+        if (qRes.length < 1) {
+            res.send('Nope')
+        } else {
+            console.log(qRes[0].username+' started streaming.')
+            res.send('rtmp://'+params[0].split('/')[2]+'/live/normal+'+qRes[0].username)
+        }
+    })
 })
  
 app.listen(process.env.PORT)
@@ -132,4 +131,12 @@ function clearUnverifiedKeys() {
                 console.log(qRes.affectedRows+' unverified keys removed')
         })
     }, 10*60*1000)
+
+    setInterval(function() {
+        var query = 'SELECT 1'
+        sql.query(query, function(err, qRes, fields) {
+            if (err) throw err;
+            console.log('ping')
+        })
+    }, 15*1000)
 }
