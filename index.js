@@ -6,6 +6,7 @@ var cors = require('cors')
 var app = express()
 app.use(cors())
 var getJSON = require('get-json')
+var streamsFolder = process.env.STREAMS_PATH || '/mnt/streams'
 
 var bodyParser = require('body-parser');
 app.use(bodyParser.text({ type: 'text/plain' }))
@@ -88,16 +89,28 @@ app.get('/verify/:block/:tx_num', function (req, res) {
     })
 })
 
-app.post('/rtmpRewrite', function (req, res) {
-    console.log(req.body)
-    var params = req.body.split('\n')
-    console.log(params)
+app.get('/oldStream/:username/:datetime', function (req, res) {
+    var username = req.params.username
+    var datetime = req.params.datetime
+    var query = 'SELECT filePath, timeStart, timeEnd FROM oldStreams WHERE username="'+username+'"'+
+                ' AND timeStart < '+datetime+' ORDER BY timeStart DESC LIMIT 2'
+    var results = []
+    sql.query(query, function(err, qRes, fields) {
+        if (err) throw err;
+        results.push(qRes)
+        var query = 'SELECT filePath, timeStart, timeEnd FROM oldStreams WHERE username="'+username+'"'+
+                    ' AND timeStart > '+datetime+' ORDER BY timeStart ASC LIMIT 2'
+        sql.query(query, function(err, qRes2, fields) {
+            if (err) throw err;
+            results.push(qRes2)
+            res.send(results)
+        })
+    })
+})
 
-    // only allow this call from mistserver in local
-    // if (req.ip != '::1' && req.ip != '127.0.0.1') {
-    //     res.send('Nope')
-    //     return
-    // }
+app.post('/rtmpRewrite', function (req, res) {
+    var params = req.body.split('\n')
+
     var streamKey = params[0].split('/')[params[0].split('/').length-1]
     sql.query('SELECT username FROM streamKeys WHERE verified=1 AND streamKey = "'+streamKey+'"', function(err, qRes, fields) {
         if (err) throw err;
@@ -107,6 +120,25 @@ app.post('/rtmpRewrite', function (req, res) {
             console.log(qRes[0].username+' started streaming.')
             res.send('rtmp://'+params[0].split('/')[2]+'/live/normal+'+qRes[0].username)
         }
+    })
+})
+
+app.post('/recordingEnd', function (req, res) {
+    var params = req.body.split('\n')
+    console.log(params[0].replace('normal+', '')+' stopped streaming.')
+
+    line = {
+        username: params[0].replace('normal+', ''), 
+        filePath: params[1].replace(streamsFolder+'/', ''), 
+        fileSize: params[3],
+        timeStart: params[5],
+        timeEnd: params[6],
+        duration: params[7]
+    }
+    var query = mysql.format('INSERT INTO oldStreams SET ?', line)
+    sql.query(query, function(err, qRes, fields) {
+        if (err) throw err;
+        res.send('Ok')
     })
 })
  
@@ -136,7 +168,7 @@ function clearUnverifiedKeys() {
         var query = 'SELECT 1'
         sql.query(query, function(err, qRes, fields) {
             if (err) throw err;
-            console.log('ping')
+            // console.log('ping')
         })
     }, 15*1000)
 }

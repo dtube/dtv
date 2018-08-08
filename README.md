@@ -1,0 +1,1 @@
+Start as dev: `PORT=4000 STREAMS_PATH=/path/to/video/files node index.js`
