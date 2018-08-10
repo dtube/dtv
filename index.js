@@ -27,7 +27,7 @@ app.get('/getStreams', function (req, res) {
             "lastms"
         ]
     }
-    getJSON('http://localhost:4242/api?command='+JSON.stringify(command), function(err, jRes) {]
+    getJSON('http://localhost:4242/api?command='+JSON.stringify(command), function(err, jRes) {
         if (!jRes || !jRes.active_streams) res.send([])
         else res.send(jRes.active_streams)
     })
