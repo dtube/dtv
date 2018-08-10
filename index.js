@@ -27,8 +27,9 @@ app.get('/getStreams', function (req, res) {
             "lastms"
         ]
     }
-    getJSON('http://localhost:4242/api?command='+JSON.stringify(command), function(err, jRes) {
-        res.send(jRes.active_streams)
+    getJSON('http://localhost:4242/api?command='+JSON.stringify(command), function(err, jRes) {]
+        if (!jRes || !jRes.active_streams) res.send([])
+        else res.send(jRes.active_streams)
     })
 })
 
@@ -93,7 +94,7 @@ app.get('/oldStream/:username/:datetime', function (req, res) {
     var username = req.params.username
     var datetime = req.params.datetime
     var query = 'SELECT filePath, timeStart, timeEnd FROM oldStreams WHERE username="'+username+'"'+
-                ' AND timeStart < '+datetime+' ORDER BY timeStart DESC LIMIT 2'
+                ' AND timeStart <= '+datetime+' ORDER BY timeStart DESC LIMIT 2'
     var results = []
     sql.query(query, function(err, qRes, fields) {
         if (err) throw err;
