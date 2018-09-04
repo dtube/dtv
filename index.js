@@ -39,6 +39,7 @@ app.get('/resetKey/:username', function (req, res) {
         streamKey: createKey(16), 
         verifKey: createKey(16)
     }
+    console.log(keyLine.username+' requested a new key')
     var query = mysql.format('INSERT INTO streamKeys SET ?', keyLine)
     sql.query(query, function(err, qRes, fields) {
         if (err) throw err;
@@ -47,6 +48,7 @@ app.get('/resetKey/:username', function (req, res) {
 })
 
 app.get('/verify/:block/:tx_num', function (req, res) {
+    console.log('Trying to find verification in block '+req.params.block)
     steem.api.getBlock(req.params.block, function(err, sRes) {
         var tx = sRes.transactions[req.params.tx_num]
         var op = tx.operations[0]
@@ -77,6 +79,7 @@ app.get('/verify/:block/:tx_num', function (req, res) {
                 res.send('Couldnt find matching stream key')
                 return
             }
+            console.log('Verified stream key of '+op[1].required_posting_auths[0])
             var query = 'UPDATE streamKeys SET verified=1 WHERE verifKey="'+json.key+'"'
             sql.query(query, function(err, qRes, fields) {
                 if (err) throw err;
